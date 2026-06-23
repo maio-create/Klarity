@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Klarity — Traducteur d'articles Klear</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #F0F4FF; --surface: #FFFFFF; --surface2: #F5F7FF;
+    --border: #E2E8F8; --accent: #3762E3; --accent-light: #EEF3FF; --accent-hover: #2952CC;
+    --text: #1A1F36; --text-muted: #6B7280; --text-dim: #A0A8C0;
+    --success: #16A34A; --success-bg: #F0FDF4; --success-border: #BBF7D0;
+    --error: #DC2626; --error-bg: #FEF2F2; --error-border: #FECACA;
+    --warning: #B45309; --warning-bg: #FFFBEB; --warning-border: #FDE68A;
+    --info: #3762E3; --info-bg: #EEF3FF; --info-border: #BFDBFE;
+  }
+  body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 2.5rem 1rem 4rem; }
+  .logo-wrap { display: flex; align-items: center; gap: 14px; margin-bottom: 0.4rem; }
+  .logo-name { font-size: 32px; font-weight: 700; letter-spacing: -0.5px; color: var(--text); line-height: 1; }
+  .logo-name span { color: var(--accent); }
+  .tagline { font-size: 13px; color: var(--text-muted); text-align: center; margin-bottom: 2rem; }
+  .card { width: 100%; max-width: 520px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 1.75rem; box-shadow: 0 1px 4px rgba(55,98,227,0.06), 0 4px 24px rgba(55,98,227,0.04); }
+  .section-label { font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 10px; }
+  .lang-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-bottom: 1.5rem; }
+  .lang-chip { position: relative; cursor: pointer; }
+  .lang-chip input { position: absolute; opacity: 0; width: 0; height: 0; }
+  .lang-chip-inner { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 9px 4px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface2); transition: border-color 0.15s, background 0.15s; }
+  .lang-chip-inner .flag { font-size: 18px; line-height: 1; }
+  .lang-chip-inner .code { font-size: 10px; font-weight: 600; color: var(--text-muted); letter-spacing: 0.05em; }
+  .lang-chip input:checked + .lang-chip-inner { border-color: var(--accent); background: var(--accent-light); }
+  .lang-chip input:checked + .lang-chip-inner .code { color: var(--accent); }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
+  .input-wrap { position: relative; margin-bottom: 1rem; }
+  .input-wrap input { width: 100%; padding: 10px 14px 10px 38px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; font-size: 14px; font-family: 'Inter', sans-serif; color: var(--text); outline: none; transition: border-color 0.15s, box-shadow 0.15s; }
+  .input-wrap input::placeholder { color: var(--text-dim); }
+  .input-wrap input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(55,98,227,0.1); }
+  .input-wrap input[type="password"] { letter-spacing: 0.1em; }
+  .input-icon { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: var(--text-dim); font-size: 13px; font-weight: 600; pointer-events: none; }
+  .btn-main { width: 100%; padding: 12px; background: var(--accent); color: #fff; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; font-family: 'Inter', sans-serif; cursor: pointer; transition: background 0.15s, transform 0.1s; }
+  .btn-main:hover { background: var(--accent-hover); }
+  .btn-main:active { transform: scale(0.99); }
+  .btn-main:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+  .status { font-size: 13px; padding: 10px 14px; border-radius: 8px; margin-bottom: 1rem; display: none; line-height: 1.5; }
+  .s-info    { background: var(--info-bg);    color: var(--info);    border: 1px solid var(--info-border); }
+  .s-success { background: var(--success-bg); color: var(--success); border: 1px solid var(--success-border); }
+  .s-error   { background: var(--error-bg);   color: var(--error);   border: 1px solid var(--error-border); }
+  .preview { font-size: 13px; color: var(--text-muted); padding: 10px 14px; background: var(--accent-light); border-radius: 8px; margin-bottom: 1rem; display: none; line-height: 1.5; border-left: 3px solid var(--accent); }
+  .preview strong { color: var(--text); font-weight: 500; display: block; margin-bottom: 2px; }
+  .steps { display: none; flex-direction: column; gap: 6px; margin-bottom: 1rem; }
+  .step { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text-dim); }
+  .step-dot { width: 20px; height: 20px; border-radius: 50%; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 10px; flex-shrink: 0; }
+  .step.active { color: var(--accent); }
+  .step.active .step-dot { background: var(--info-bg); border-color: var(--accent); color: var(--accent); }
+  .step.done { color: var(--text-muted); }
+  .step.done .step-dot { background: var(--success-bg); border-color: var(--success); color: var(--success); }
+  .step.skipped .step-dot { color: var(--text-dim); }
+  .step.error-step { color: var(--error); }
+  .step.error-step .step-dot { background: var(--error-bg); border-color: var(--error); color: var(--error); }
+  .confirm-box { background: var(--warning-bg); border: 1px solid var(--warning-border); border-radius: 10px; padding: 1rem; margin-bottom: 1rem; display: none; }
+  .confirm-box p { font-size: 13px; color: var(--warning); margin-bottom: 8px; line-height: 1.5; }
+  .lang-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .lang-tag { font-size: 11px; font-weight: 500; padding: 2px 8px; background: #FEF3C7; border: 1px solid #FCD34D; border-radius: 4px; color: #92400E; }
+  .confirm-buttons { display: flex; gap: 8px; }
+  .confirm-buttons button { flex: 1; padding: 8px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; font-family: 'Inter', sans-serif; }
+  .btn-overwrite { background: var(--accent); color: #fff; border: none; }
+  .btn-skip { background: #fff; color: var(--text-muted); border: 1px solid var(--border); }
+  .worker-row { display: flex; align-items: center; gap: 8px; margin-top: 1rem; }
+  .worker-row label { font-size: 11px; color: var(--text-dim); white-space: nowrap; }
+  .worker-row input { flex: 1; padding: 5px 10px; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; font-size: 11px; font-family: monospace; color: var(--text-muted); outline: none; }
+  .worker-row input:focus { border-color: var(--accent); color: var(--text); }
+  .footer-note { font-size: 11px; color: var(--text-dim); text-align: center; margin-top: 1.25rem; }
+
+  .mode-tabs { display: flex; gap: 0; margin-bottom: 1rem; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .mode-tab { flex: 1; padding: 8px; font-size: 12px; font-weight: 500; cursor: pointer; background: var(--surface2); color: var(--text-muted); border: none; font-family: Inter, sans-serif; transition: all 0.15s; user-select: none; }
+  .mode-tab.active { background: var(--accent); color: #fff; }
+  .collection-select { width: 100%; padding: 10px 14px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; font-size: 13px; font-family: Inter, sans-serif; color: var(--text); outline: none; margin-bottom: 1rem; }
+  .collection-select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(55,98,227,0.1); }
+  .articles-list { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 10px; margin-bottom: 1rem; max-height: 160px; overflow-y: auto; display: none; }
+  .articles-list-item { font-size: 12px; color: var(--text-muted); padding: 3px 0; border-bottom: 1px solid var(--border); }
+  .articles-list-item:last-child { border-bottom: none; }
+  .articles-count { font-size: 12px; color: var(--accent); margin-bottom: 6px; font-weight: 500; }
+
+</style>
+</head>
+<body>
+
+<div class="logo-wrap">
+  <svg width="36" height="38" viewBox="0 0 60 50" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-top:4px;">
+    <rect x="0" y="0" width="60" height="11" rx="5.5" fill="#3762E3"/>
+    <rect x="10" y="16" width="50" height="11" rx="5.5" fill="#3762E3" opacity="0.55"/>
+    <rect x="30" y="32" width="26" height="9" rx="4.5" fill="#3762E3" opacity="0.26"/>
+  </svg>
+  <div class="logo-name"><span>K</span>larity</div>
+</div>
+<p class="tagline">Traduction automatique des articles Intercom — Kizeo Forms / Klear / Karré</p>
+
+<div class="card">
+  <div class="section-label">Langues cibles</div>
+  <div class="lang-grid">
+    <label class="lang-chip"><input type="checkbox" value="en"><div class="lang-chip-inner"><span class="flag">🇬🇧</span><span class="code">EN</span></div></label>
+    <label class="lang-chip"><input type="checkbox" value="es"><div class="lang-chip-inner"><span class="flag">🇪🇸</span><span class="code">ES</span></div></label>
+    <label class="lang-chip"><input type="checkbox" value="de"><div class="lang-chip-inner"><span class="flag">🇩🇪</span><span class="code">DE</span></div></label>
+    <label class="lang-chip"><input type="checkbox" value="it"><div class="lang-chip-inner"><span class="flag">🇮🇹</span><span class="code">IT</span></div></label>
+    <label class="lang-chip"><input type="checkbox" value="nl"><div class="lang-chip-inner"><span class="flag">🇳🇱</span><span class="code">NL</span></div></label>
+    <label class="lang-chip"><input type="checkbox" value="pl"><div class="lang-chip-inner"><span class="flag">🇵🇱</span><span class="code">PL</span></div></label>
+    <label class="lang-chip"><input type="checkbox" value="pt"><div class="lang-chip-inner"><span class="flag">🇵🇹</span><span class="code">PT</span></div></label>
+  </div>
+
+  <hr class="divider">
+
+  <div class="section-label">Articles à traduire</div>
+  <div class="mode-tabs">
+    <button class="mode-tab active" onclick="switchMode('articles')">Par articles</button>
+    <button class="mode-tab" onclick="switchMode('collection')">Par collection</button>
+  </div>
+
+  <div id="mode-articles">
+    <div class="input-wrap" style="position:relative;">
+      <textarea id="article-id" rows="3" placeholder="Un ID ou lien par ligne, ou séparés par des virgules&#10;ex : 15532716, 13833465&#10;ou https://intercom.help/..." style="width:100%; padding:10px 14px; background:var(--surface2); border:1px solid var(--border); border-radius:8px; font-size:13px; font-family:Inter,sans-serif; color:var(--text); outline:none; resize:vertical; line-height:1.5;"></textarea>
+    </div>
+  </div>
+
+  <div id="mode-collection" style="display:none;">
+    <select class="collection-select" id="collection-select" onchange="onCollectionChange()">
+      <option value="">Chargement des collections...</option>
+    </select>
+    <div class="articles-list" id="articles-list">
+      <div class="articles-count" id="articles-count"></div>
+      <div id="articles-list-items"></div>
+    </div>
+  </div>
+
+  <div class="input-wrap">
+    <span class="input-icon">🔑</span>
+    <input type="password" id="anthropic-key" placeholder="Clé API Anthropic (sk-ant-...)" onchange="saveKey()" />
+  </div>
+
+  <div class="preview" id="preview"></div>
+  <div class="status" id="status"></div>
+
+  <div class="confirm-box" id="confirm-box">
+    <p>Ces langues ont déjà une traduction :</p>
+    <div class="lang-tags" id="existing-tags"></div>
+    <p>Veux-tu les écraser ou les ignorer ?</p>
+    <div class="confirm-buttons">
+      <button class="btn-overwrite" onclick="confirmChoice('overwrite')">Écraser</button>
+      <button class="btn-skip" onclick="confirmChoice('skip')">Ignorer</button>
+    </div>
+  </div>
+
+  <div class="steps" id="steps"></div>
+  <button class="btn-main" id="btn" onclick="run()">Traduire les articles</button>
+
+  <div class="worker-row">
+    <label>Worker</label>
+    <input type="text" id="worker-url" value="https://intercom-translate.maio-803.workers.dev" />
+  </div>
+</div>
+
+<p class="footer-note">Les traductions sont créées en brouillon — pense à les relire avant de publier.</p>
+
+<script>
+const langNames = { en:'Anglais', es:'Espagnol', de:'Allemand', it:'Italien', nl:'Néerlandais', pl:'Polonais', pt:'Portugais' };
+
+// Charger la clé Anthropic depuis localStorage au démarrage
+window.addEventListener('DOMContentLoaded', () => {
+  const saved = localStorage.getItem('klarity_anthropic_key');
+  if (saved) document.getElementById('anthropic-key').value = saved;
+});
+
+// Sauvegarder la clé à chaque modification
+function saveKey() {
+  const key = document.getElementById('anthropic-key').value.trim();
+  if (key) localStorage.setItem('klarity_anthropic_key', key);
+}
+const langLabels = { en:'anglais', es:'espagnol', de:'allemand', it:'italien', nl:'néerlandais', pl:'polonais', pt:'portugais' };
+let pendingResolve = null;
+
+let currentMode = 'articles';
+let collectionArticleIds = [];
+
+function switchMode(mode) {
+  currentMode = mode;
+  document.querySelectorAll('.mode-tab').forEach((t, i) => {
+    t.classList.toggle('active', (i === 0 && mode === 'articles') || (i === 1 && mode === 'collection'));
+  });
+  document.getElementById('mode-articles').style.display = mode === 'articles' ? 'block' : 'none';
+  document.getElementById('mode-collection').style.display = mode === 'collection' ? 'block' : 'none';
+  if (mode === 'collection') loadCollections();
+}
+
+async function loadCollections() {
+  const select = document.getElementById('collection-select');
+  if (select.options.length > 1) return; // déjà chargé
+  try {
+    const r = await fetch(getWorker() + '/get-collections', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'list' })
+    });
+    const data = await r.json();
+    select.innerHTML = '<option value="">Sélectionne une collection...</option>';
+    (data.data || []).forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.id;
+      opt.textContent = (c.parent_id ? '  └ ' : '') + (c.name || c.id);
+      select.appendChild(opt);
+    });
+  } catch(e) {
+    select.innerHTML = '<option value="">Erreur de chargement</option>';
+  }
+}
+
+async function onCollectionChange() {
+  const collectionId = document.getElementById('collection-select').value;
+  const listEl = document.getElementById('articles-list');
+  if (!collectionId) { listEl.style.display = 'none'; return; }
+
+  listEl.style.display = 'block';
+  document.getElementById('articles-count').textContent = 'Chargement...';
+  document.getElementById('articles-list-items').innerHTML = '';
+
+  try {
+    const r = await fetch(getWorker() + '/get-collection-articles', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ collection_id: collectionId })
+    });
+    const data = await r.json();
+    collectionArticleIds = data.article_ids || [];
+    document.getElementById('articles-count').textContent = `${collectionArticleIds.length} article(s) trouvé(s)`;
+    document.getElementById('articles-list-items').innerHTML = (data.articles || [])
+      .map(a => `<div class="articles-list-item">${a.title}</div>`).join('');
+  } catch(e) {
+    document.getElementById('articles-count').textContent = 'Erreur';
+  }
+}
+
+function extractArticleId(input) {
+  const trimmed = input.trim();
+  const match = trimmed.match(/articles\/([0-9]+)/);
+  if (match) return match[1];
+  return trimmed.replace(/[^0-9]/g, '');
+}
+
+function extractAllArticleIds(input) {
+  // Séparer par virgules, points-virgules ou sauts de ligne
+  const parts = input.split(/[,;\n]+/).map(s => s.trim()).filter(Boolean);
+  return parts.map(extractArticleId).filter(id => id.length > 0);
+}
+
+function setStatus(msg, type) {
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  el.className = 'status s-' + type;
+  el.style.display = 'block';
+}
+
+function getLangs() {
+  return Array.from(document.querySelectorAll('.lang-chip input:checked')).map(c => c.value);
+}
+
+function getWorker() { return document.getElementById('worker-url').value.trim(); }
+function getAnthropicKey() { return document.getElementById('anthropic-key').value.trim(); }
+
+function buildSteps(langs, suffix) {
+  const container = document.getElementById('steps');
+  container.innerHTML = '';
+  const s = suffix || '';
+  const mkStep = (id, icon, label) => {
+    const el = document.createElement('div');
+    el.className = 'step'; el.id = id;
+    el.innerHTML = `<div class="step-dot">${icon}</div> ${label}`;
+    container.appendChild(el);
+  };
+  mkStep('step-fetch', '↓', `Récupération de l'article${s}`);
+  langs.forEach(lang => mkStep('step-' + lang, 'A', `Traduction ${langNames[lang]}`));
+  mkStep('step-push', '↑', 'Envoi dans Intercom');
+  container.style.display = 'flex';
+}
+
+function setStep(id, state) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.className = 'step ' + (state === 'error' ? 'error-step' : state);
+  const dot = el.querySelector('.step-dot');
+  if (state === 'done') dot.textContent = '✓';
+  else if (state === 'active') dot.textContent = '…';
+  else if (state === 'error') dot.textContent = '✗';
+  else if (state === 'skipped') dot.textContent = '–';
+}
+
+async function postWorker(path, body) {
+  const r = await fetch(getWorker() + path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  const data = await r.json();
+  if (!r.ok) throw new Error(JSON.stringify(data.error || data));
+  return data;
+}
+
+async function translateWithClaude(title, body, lang) {
+  const MAX_CHARS = 6000;
+  const sections = body.split(/(?=<h2[\s>])/i);
+  const chunks = [];
+  let current = '';
+  for (const section of sections) {
+    if ((current + section).length > MAX_CHARS && current.length > 0) {
+      chunks.push(current);
+      current = section;
+    } else {
+      current += section;
+    }
+  }
+  if (current) chunks.push(current);
+
+  let translatedTitle = title;
+  const translatedChunks = [];
+
+  for (let i = 0; i < chunks.length; i++) {
+    const isFirst = i === 0;
+    const prompt = `Traduis ce contenu du français vers l'${langLabels[lang] || lang}.
+
+RÈGLES :
+- Conserve EXACTEMENT la structure HTML (balises, attributs class, style, src, id, width, height)
+- Ne traduis PAS : Klear, Kizeo, Kizeo Forms
+- Traduis UNIQUEMENT le texte visible entre les balises
+- Réponds avec un JSON pur commençant par { et finissant par }
+${isFirst ? `- Format : {"title": "...", "body": "..."}
+Titre FR : ${title}` : `- Format : {"body": "..."}`}
+Body FR : ${chunks[i]}`;
+
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': getAnthropicKey(),
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 8000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error?.message || 'Erreur Claude');
+
+    const raw = data.content?.find(b => b.type === 'text')?.text || '';
+    const start = raw.indexOf('{');
+    const end = raw.lastIndexOf('}');
+    const clean = start !== -1 && end !== -1 ? raw.slice(start, end + 1) : raw;
+
+    try {
+      const parsed = JSON.parse(clean);
+      if (isFirst && parsed.title) translatedTitle = parsed.title;
+      translatedChunks.push(parsed.body || '');
+    } catch {
+      translatedChunks.push(chunks[i]);
+    }
+  }
+
+  return { title: translatedTitle, body: translatedChunks.join('') };
+}
+
+function askConfirm(existingLangs) {
+  return new Promise(resolve => {
+    pendingResolve = resolve;
+    document.getElementById('existing-tags').innerHTML = existingLangs.map(l => `<span class="lang-tag">${langNames[l]}</span>`).join('');
+    document.getElementById('confirm-box').style.display = 'block';
+  });
+}
+
+function confirmChoice(choice) {
+  document.getElementById('confirm-box').style.display = 'none';
+  if (pendingResolve) { pendingResolve(choice); pendingResolve = null; }
+}
+
+async function run() {
+  const articleIds = currentMode === 'collection' ? collectionArticleIds : extractAllArticleIds(document.getElementById('article-id').value);
+  if (!articleIds.length) { setStatus(currentMode === 'collection' ? "Sélectionne une collection avec des articles." : "Saisis au moins un ID ou lien d'article.", 'error'); return; }
+  if (!getAnthropicKey()) { setStatus("Saisis ta clé API Anthropic.", 'error'); return; }
+  const langs = getLangs();
+  if (!langs.length) { setStatus('Sélectionne au moins une langue.', 'error'); return; }
+
+  const btn = document.getElementById('btn');
+  btn.disabled = true;
+  document.getElementById('preview').style.display = 'none';
+  document.getElementById('status').style.display = 'none';
+  document.getElementById('confirm-box').style.display = 'none';
+
+  let totalSuccess = 0;
+  let totalError = 0;
+
+  for (let ai = 0; ai < articleIds.length; ai++) {
+    const articleId = articleIds[ai];
+    const articleNum = articleIds.length > 1 ? ` (${ai + 1}/${articleIds.length})` : '';
+    buildSteps(langs, articleNum);
+
+  try {
+    setStep('step-fetch', 'active');
+    const article = await postWorker('/get-article', { article_id: articleId });
+    const frContent = article.translated_content?.fr || {};
+    const title = frContent.title || article.title || '';
+    const body = frContent.body || article.body || '';
+
+    const preview = document.getElementById('preview');
+    preview.innerHTML = `<strong>${title}</strong>${body.replace(/<[^>]+>/g, ' ').substring(0, 160)}…`;
+    preview.style.display = 'block';
+    setStep('step-fetch', 'done');
+
+    const existingContent = article.translated_content || {};
+    const existingLangs = langs.filter(l => existingContent[l]?.title && existingContent[l]?.body);
+    let langsToSkip = [];
+    if (existingLangs.length > 0) {
+      const choice = await askConfirm(existingLangs);
+      if (choice === 'skip') langsToSkip = existingLangs;
+    }
+
+    const translations = {};
+    for (const lang of langs) {
+      if (langsToSkip.includes(lang)) { setStep('step-' + lang, 'skipped'); continue; }
+      setStep('step-' + lang, 'active');
+      setStatus(`Traduction ${langNames[lang]} en cours...`, 'info');
+      try {
+        const translation = await translateWithClaude(title, body, lang);
+        translations[lang] = translation;
+        setStep('step-' + lang, 'done');
+      } catch(e) {
+        setStep('step-' + lang, 'error');
+      }
+    }
+
+    const successLangs = langs.filter(l => translations[l]);
+    if (!successLangs.length) {
+      setStatus('Aucune nouvelle traduction à envoyer.', 'info');
+      btn.disabled = false;
+      return;
+    }
+
+    setStep('step-push', 'active');
+    setStatus('Envoi dans Intercom...', 'info');
+    await postWorker('/push-translations', { article_id: articleId, translations, langs: successLangs });
+    setStep('step-push', 'done');
+
+    const skipped = langsToSkip.length;
+    totalSuccess++;
+    setStatus(
+      articleIds.length > 1
+        ? `Article ${ai + 1}/${articleIds.length} — Traductions créées : ${successLangs.map(l => langNames[l]).join(', ')}`
+        : (skipped > 0
+            ? `Traductions créées : ${successLangs.map(l => langNames[l]).join(', ')} — ${skipped} ignorée(s).`
+            : `Traductions créées en brouillon : ${successLangs.map(l => langNames[l]).join(', ')}`),
+      'success'
+    );
+  } catch(e) {
+    totalError++;
+    setStatus(`Erreur article ${articleId} : ${e.message}`, 'error');
+  }
+  } // fin boucle articles
+
+  if (articleIds.length > 1) {
+    setStatus(`Terminé — ${totalSuccess} article(s) traduit(s)${totalError > 0 ? `, ${totalError} erreur(s)` : ''}.`, totalError > 0 ? 'error' : 'success');
+  }
+
+  btn.disabled = false;
+}
+</script>
+</body>
+</html>
