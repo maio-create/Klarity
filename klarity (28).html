@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Klarity — Traducteur d'articles Intercom</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 50'><rect x='0' y='0' width='60' height='11' rx='5.5' fill='%233762E3'/><rect x='10' y='16' width='50' height='11' rx='5.5' fill='%233762E3' opacity='0.55'/><rect x='30' y='32' width='26' height='9' rx='4.5' fill='%233762E3' opacity='0.26'/></svg>">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F0F4FF;--surface:#FFF;--surface2:#F5F7FF;
+  --border:#E2E8F8;--accent:#3762E3;--accent-l:#EEF3FF;--accent-h:#2952CC;
+  --text:#1A1F36;--muted:#6B7280;--dim:#A0A8C0;
+  --ok:#16A34A;--ok-bg:#F0FDF4;--ok-b:#BBF7D0;
+  --err:#DC2626;--err-bg:#FEF2F2;--err-b:#FECACA;
+  --warn:#B45309;--warn-bg:#FFFBEB;--warn-b:#FDE68A;
+  --info:#3762E3;--info-bg:#EEF3FF;--info-b:#BFDBFE;
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:2.5rem 1rem 4rem}
+.logo-wrap{display:flex;align-items:center;gap:14px;margin-bottom:.4rem}
+.logo-name{font-size:32px;font-weight:700;letter-spacing:-.5px;color:var(--text);line-height:1}
+.logo-name span{color:var(--accent)}
+.tagline{font-size:13px;color:var(--muted);text-align:center;margin-bottom:2rem}
+.card{width:100%;max-width:520px;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:1.75rem;box-shadow:0 1px 4px rgba(55,98,227,.06),0 4px 24px rgba(55,98,227,.04)}
+.lbl{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--dim);margin-bottom:10px}
+.lang-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:1.5rem}
+.chip{position:relative;cursor:pointer}
+.chip input{position:absolute;opacity:0;width:0;height:0}
+.chip-inner{display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 4px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);transition:border-color .15s,background .15s}
+.chip-inner .flag{font-size:18px;line-height:1}
+.chip-inner .code{font-size:10px;font-weight:600;color:var(--muted);letter-spacing:.05em}
+.chip input:checked+.chip-inner{border-color:var(--accent);background:var(--accent-l)}
+.chip input:checked+.chip-inner .code{color:var(--accent)}
+.divider{border:none;border-top:1px solid var(--border);margin:1.5rem 0}
+.mode-tabs{display:flex;margin-bottom:1rem;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.mode-tab{flex:1;padding:8px;font-size:12px;font-weight:500;cursor:pointer;background:var(--surface2);color:var(--muted);border:none;font-family:Inter,sans-serif;transition:all .15s}
+.mode-tab.active{background:var(--accent);color:#fff}
+.field{margin-bottom:1rem}
+.field input,.field textarea,.field select{width:100%;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:Inter,sans-serif;color:var(--text);outline:none;transition:border-color .15s}
+.field input:focus,.field textarea:focus,.field select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(55,98,227,.1)}
+.field textarea{resize:vertical;line-height:1.5}
+.field select{cursor:pointer}
+.articles-list{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:1rem;max-height:150px;overflow-y:auto;display:none}
+.articles-count{font-size:12px;color:var(--accent);margin-bottom:6px;font-weight:500}
+.articles-item{font-size:12px;color:var(--muted);padding:3px 0;border-bottom:1px solid var(--border)}
+.articles-item:last-child{border-bottom:none}
+.btn{width:100%;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;font-family:Inter,sans-serif;cursor:pointer;transition:background .15s}
+.btn:hover{background:var(--accent-h)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.status{font-size:13px;padding:10px 14px;border-radius:8px;margin-bottom:1rem;display:none;line-height:1.5}
+.s-info{background:var(--info-bg);color:var(--info);border:1px solid var(--info-b)}
+.s-ok{background:var(--ok-bg);color:var(--ok);border:1px solid var(--ok-b)}
+.s-err{background:var(--err-bg);color:var(--err);border:1px solid var(--err-b)}
+.preview{font-size:13px;color:var(--muted);padding:10px 14px;background:var(--accent-l);border-radius:8px;margin-bottom:1rem;display:none;line-height:1.5;border-left:3px solid var(--accent)}
+.preview strong{color:var(--text);font-weight:500;display:block;margin-bottom:2px}
+.steps{display:none;flex-direction:column;gap:6px;margin-bottom:1rem}
+.step{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--dim)}
+.dot{width:20px;height:20px;border-radius:50%;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0}
+.step.active{color:var(--accent)}.step.active .dot{background:var(--info-bg);border-color:var(--accent);color:var(--accent)}
+.step.done{color:var(--muted)}.step.done .dot{background:var(--ok-bg);border-color:var(--ok);color:var(--ok)}
+.step.skip .dot{color:var(--dim)}
+.step.fail{color:var(--err)}.step.fail .dot{background:var(--err-bg);border-color:var(--err);color:var(--err)}
+.confirm{background:var(--warn-bg);border:1px solid var(--warn-b);border-radius:10px;padding:1rem;margin-bottom:1rem;display:none}
+.confirm p{font-size:13px;color:var(--warn);margin-bottom:8px;line-height:1.5}
+.lang-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.lang-tag{font-size:11px;font-weight:500;padding:2px 8px;background:#FEF3C7;border:1px solid #FCD34D;border-radius:4px;color:#92400E}
+.confirm-btns{display:flex;gap:8px}
+.confirm-btns button{flex:1;padding:8px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;font-family:Inter,sans-serif}
+.btn-ow{background:var(--accent);color:#fff;border:none}
+.btn-sk{background:#fff;color:var(--muted);border:1px solid var(--border)}
+.worker-row{display:flex;align-items:center;gap:8px;margin-top:1rem}
+.worker-row label{font-size:11px;color:var(--dim);white-space:nowrap}
+.worker-row input{flex:1;padding:5px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;font-size:11px;font-family:monospace;color:var(--muted);outline:none}
+.footer{font-size:11px;color:var(--dim);text-align:center;margin-top:1.25rem}
+</style>
+</head>
+<body>
+
+<div class="logo-wrap">
+  <svg width="36" height="38" viewBox="0 0 60 50" fill="none" style="margin-top:4px">
+    <rect x="0" y="0" width="60" height="11" rx="5.5" fill="#3762E3"/>
+    <rect x="10" y="16" width="50" height="11" rx="5.5" fill="#3762E3" opacity="0.55"/>
+    <rect x="30" y="32" width="26" height="9" rx="4.5" fill="#3762E3" opacity="0.26"/>
+  </svg>
+  <div class="logo-name"><span>K</span>larity</div>
+</div>
+<p class="tagline">Traduction automatique des articles Intercom &mdash; Kizeo Forms / Klear / Karr&eacute;</p>
+
+<div class="card">
+  <div class="lbl">Langues cibles</div>
+  <div class="lang-grid">
+    <label class="chip"><input type="checkbox" value="en"><div class="chip-inner"><span class="flag">&#127468;&#127463;</span><span class="code">EN</span></div></label>
+    <label class="chip"><input type="checkbox" value="es"><div class="chip-inner"><span class="flag">&#127466;&#127480;</span><span class="code">ES</span></div></label>
+    <label class="chip"><input type="checkbox" value="de"><div class="chip-inner"><span class="flag">&#127465;&#127466;</span><span class="code">DE</span></div></label>
+    <label class="chip"><input type="checkbox" value="it"><div class="chip-inner"><span class="flag">&#127470;&#127481;</span><span class="code">IT</span></div></label>
+    <label class="chip"><input type="checkbox" value="nl"><div class="chip-inner"><span class="flag">&#127475;&#127473;</span><span class="code">NL</span></div></label>
+    <label class="chip"><input type="checkbox" value="pl"><div class="chip-inner"><span class="flag">&#127477;&#127473;</span><span class="code">PL</span></div></label>
+    <label class="chip"><input type="checkbox" value="pt"><div class="chip-inner"><span class="flag">&#127477;&#127481;</span><span class="code">PT</span></div></label>
+  </div>
+
+  <hr class="divider">
+
+  <div class="lbl">Articles a traduire</div>
+  <div class="mode-tabs">
+    <button class="mode-tab active" onclick="switchMode('articles')">Par articles</button>
+    <button class="mode-tab" onclick="switchMode('collection')">Par collection</button>
+  </div>
+
+  <div id="mode-articles">
+    <div class="field">
+      <textarea id="article-ids" rows="3" placeholder="Un ID ou lien par ligne&#10;ex: 15532716 ou https://intercom.help/..."></textarea>
+    </div>
+  </div>
+
+  <div id="mode-collection" style="display:none">
+    <div class="field">
+      <select id="hc-select" onchange="onHCChange()">
+        <option value="">Selectionnez une base de connaissance...</option>
+      </select>
+    </div>
+    <div class="field">
+      <select id="col-select" onchange="onColChange()" style="display:none">
+        <option value="">Selectionnez une collection...</option>
+      </select>
+    </div>
+    <div class="articles-list" id="art-list">
+      <div class="articles-count" id="art-count"></div>
+      <div id="art-items"></div>
+    </div>
+  </div>
+
+  <div class="field">
+    <input type="password" id="api-key" placeholder="Cle API Anthropic (sk-ant-...)" onchange="saveKey()">
+  </div>
+
+  <div class="preview" id="preview"></div>
+  <div class="status" id="status"></div>
+
+  <div class="confirm" id="confirm">
+    <p>Ces langues ont deja une traduction :</p>
+    <div class="lang-tags" id="exist-tags"></div>
+    <p>Veux-tu les ecraser ou les ignorer ?</p>
+    <div class="confirm-btns">
+      <button class="btn-ow" onclick="confirmChoice('ow')">Ecraser</button>
+      <button class="btn-sk" onclick="confirmChoice('sk')">Ignorer</button>
+    </div>
+  </div>
+
+  <div class="steps" id="steps"></div>
+  <button class="btn" id="btn" onclick="run()">Traduire les articles</button>
+
+  <div class="worker-row">
+    <label>Worker</label>
+    <input type="text" id="worker-url" value="https://intercom-translate.maio-803.workers.dev">
+  </div>
+</div>
+<p class="footer">Les traductions sont creees en brouillon &mdash; pense a les relire avant de publier.</p>
+
+<script>
+var LN = {en:'Anglais',es:'Espagnol',de:'Allemand',it:'Italien',nl:'Neerlandais',pl:'Polonais',pt:'Portugais'};
+var LL = {en:'anglais',es:'espagnol',de:'allemand',it:'italien',nl:'neerlandais',pl:'polonais',pt:'portugais'};
+var mode = 'articles';
+var colIds = [];
+var pending = null;
+
+window.addEventListener('DOMContentLoaded', function() {
+  var k = localStorage.getItem('klarity_key');
+  if (k && k.indexOf('sk-ant') === 0) document.getElementById('api-key').value = k;
+});
+
+function saveKey() {
+  var k = document.getElementById('api-key').value.trim();
+  if (k.indexOf('sk-ant') === 0) localStorage.setItem('klarity_key', k);
+}
+
+function W() { return document.getElementById('worker-url').value.trim(); }
+function K() { return document.getElementById('api-key').value.trim(); }
+function langs() { return Array.from(document.querySelectorAll('.chip input:checked')).map(function(c){return c.value;}); }
+
+function setStatus(msg, type) {
+  var el = document.getElementById('status');
+  el.textContent = msg; el.className = 'status s-'+type; el.style.display = 'block';
+}
+
+function switchMode(m) {
+  mode = m;
+  document.querySelectorAll('.mode-tab').forEach(function(t,i){
+    t.classList.toggle('active',(i===0&&m==='articles')||(i===1&&m==='collection'));
+  });
+  document.getElementById('mode-articles').style.display = m==='articles'?'block':'none';
+  document.getElementById('mode-collection').style.display = m==='collection'?'block':'none';
+  if (m==='collection') loadHC();
+}
+
+function loadHC() {
+  var sel = document.getElementById('hc-select');
+  if (sel.options.length > 1) return;
+  post('/get-help-centers', {}).then(function(d) {
+    sel.innerHTML = '<option value="">Selectionnez une base de connaissance...</option>';
+    (d.data||[]).forEach(function(hc) {
+      var o = document.createElement('option');
+      o.value = hc.id; o.textContent = hc.display_name || hc.identifier;
+      sel.appendChild(o);
+    });
+  }).catch(function() { sel.innerHTML = '<option value="">Erreur</option>'; });
+}
+
+function onHCChange() {
+  var hcId = document.getElementById('hc-select').value;
+  var cSel = document.getElementById('col-select');
+  document.getElementById('art-list').style.display = 'none';
+  colIds = [];
+  if (!hcId) { cSel.style.display='none'; return; }
+  cSel.style.display = 'block';
+  cSel.innerHTML = '<option value="">Chargement...</option>';
+  post('/get-collections', {help_center_id: hcId}).then(function(d) {
+    cSel.innerHTML = '<option value="">Selectionnez une collection...</option>';
+    (d.data||[]).forEach(function(c) {
+      var o = document.createElement('option');
+      o.value = c.id; o.textContent = (c.parent_id?'  \u2514 ':'')+(c.name||c.id);
+      cSel.appendChild(o);
+    });
+  }).catch(function() { cSel.innerHTML = '<option value="">Erreur</option>'; });
+}
+
+function onColChange() {
+  var colId = document.getElementById('col-select').value;
+  var list = document.getElementById('art-list');
+  if (!colId) { list.style.display='none'; return; }
+  list.style.display = 'block';
+  document.getElementById('art-count').textContent = 'Chargement...';
+  document.getElementById('art-items').innerHTML = '';
+  colIds = [];
+  post('/get-collection-articles', {collection_id: colId}).then(function(d) {
+    colIds = d.article_ids || [];
+    document.getElementById('art-count').textContent = colIds.length + ' article(s)';
+    document.getElementById('art-items').innerHTML = (d.articles||[]).map(function(a){
+      return '<div class="articles-item">'+a.title+'</div>';
+    }).join('');
+  }).catch(function() { document.getElementById('art-count').textContent = 'Erreur'; });
+}
+
+function getId(s) {
+  var m = s.trim().match(/articles\/([0-9]+)/);
+  if (m) return m[1];
+  return s.trim().replace(/[^0-9]/g,'');
+}
+
+function getIds(s) {
+  return s.split(/[,;\n]+/).map(function(x){return x.trim();}).filter(Boolean).map(getId).filter(function(x){return x.length>0;});
+}
+
+function buildSteps(ls, sfx) {
+  var c = document.getElementById('steps');
+  c.innerHTML = '';
+  function mk(id, label) {
+    var el = document.createElement('div');
+    el.className = 'step'; el.id = id;
+    el.innerHTML = '<div class="dot">-</div> '+label;
+    c.appendChild(el);
+  }
+  mk('s-fetch', 'Recuperation'+(sfx||''));
+  ls.forEach(function(l){ mk('s-'+l, 'Traduction '+LN[l]); });
+  mk('s-push', 'Envoi dans Intercom');
+  c.style.display = 'flex';
+}
+
+function setStep(id, st) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.className = 'step '+({active:'active',done:'done',skip:'skip',fail:'fail'}[st]||'');
+  var d = el.querySelector('.dot');
+  if (st==='done') d.textContent='v';
+  else if (st==='active') d.textContent='...';
+  else if (st==='fail') d.textContent='x';
+  else if (st==='skip') d.textContent='-';
+}
+
+function post(path, body) {
+  return fetch(W()+path, {
+    method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)
+  }).then(function(r){ return r.json().then(function(d){ if(!r.ok) throw new Error(JSON.stringify(d.error||d)); return d; }); });
+}
+
+function callClaude(prompt) {
+  return fetch('https://api.anthropic.com/v1/messages', {
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'x-api-key': K(),
+      'anthropic-version':'2023-06-01',
+      'anthropic-dangerous-direct-browser-access':'true'
+    },
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:16000,messages:[{role:'user',content:prompt}]})
+  }).then(function(r){ return r.json(); }).then(function(d){
+    if (d.error) throw new Error(d.error.message);
+    var raw = (d.content||[]).filter(function(b){return b.type==='text';}).map(function(b){return b.text;}).join('');
+    var s = raw.indexOf('{'), e = raw.lastIndexOf('}');
+    if (s===-1||e===-1) throw new Error('JSON invalide');
+    return JSON.parse(raw.slice(s, e+1));
+  });
+}
+
+function translateChunk(chunk, lang, isFirst, title, desc) {
+  var ln = LL[lang]||lang;
+  var prompt;
+  if (isFirst) {
+    var dLine = desc ? ('\nDescription FR: '+desc) : '';
+    var dFmt = desc ? ', "description": "..."' : '';
+    prompt = 'Traduis du francais vers l\''+ln+'.\n'
+      +'REGLES:\n- Conserve le HTML exactement (balises, attributs)\n- Ne traduis pas : Klear, Kizeo, Kizeo Forms, Karré\n- Balises ##nom## simples : traduire en minuscules sans accents (ex: ##client## → ##kunde## en DE)\n- Balises ##_block:identifiant-SUFFIXE## : ne pas traduire '_block:', traduire l'identifiant en minuscules sans accents, le suffixe après le '-' peut avoir majuscules et accents (ex: ##_block:conforme-C## → ##_block:konform-C## en DE)\n- Le texte libre autour des balises doit aussi être traduit\n- Respecte ce glossaire de terminologie officielle :\nFR→EN|DE|ES: Administrateur=Administrator|Administrator|Administrador, Balise=Tag|Kennzeichnung|Etiqueta, Balise Block=Block Tag|Block-Tag|Etiqueta de Bloque, Champ=Field|Feld|Campo, Chef de Groupe=Group Leader|Gruppenleiter|Jefe de Grupo, Formulaire=Form|Formular|Formulario, Groupe=Group|Gruppe|Grupo, Liste Avancée=Advanced List|Erweiterte Liste|Lista Avanzada, Liste Externe=External List|Externe Liste|Lista Externa, Rapport=Report|Bericht|Informe, Saisie=Data Entry|Dateneingabe|Introducción de Datos, Tableau=Table|Tabelle|Tabla, Utilisateur=User|Benutzer|Usuario, Vue=View|Ansicht|Vista, Export=Export|Export|Exportación, Données=Data|Daten|Datos\n'
+      +'Reponds UNIQUEMENT avec ce JSON: {"title": "..."'+dFmt+', "body": "..."}\n'
+      +'Titre FR: '+title+dLine+'\nBody FR: '+chunk;
+  } else {
+    prompt = 'Traduis du francais vers l\''+ln+'.\n'
+      +'REGLES:\n- Conserve le HTML exactement (balises, attributs)\n- Ne traduis pas : Klear, Kizeo, Kizeo Forms, Karré\n- Balises ##nom## simples : traduire en minuscules sans accents (ex: ##client## → ##kunde## en DE)\n- Balises ##_block:identifiant-SUFFIXE## : ne pas traduire '_block:', traduire l'identifiant en minuscules sans accents, le suffixe après le '-' peut avoir majuscules et accents (ex: ##_block:conforme-C## → ##_block:konform-C## en DE)\n- Le texte libre autour des balises doit aussi être traduit\n- Respecte ce glossaire de terminologie officielle :\nFR→EN|DE|ES: Administrateur=Administrator|Administrator|Administrador, Balise=Tag|Kennzeichnung|Etiqueta, Balise Block=Block Tag|Block-Tag|Etiqueta de Bloque, Champ=Field|Feld|Campo, Chef de Groupe=Group Leader|Gruppenleiter|Jefe de Grupo, Formulaire=Form|Formular|Formulario, Groupe=Group|Gruppe|Grupo, Liste Avancée=Advanced List|Erweiterte Liste|Lista Avanzada, Liste Externe=External List|Externe Liste|Lista Externa, Rapport=Report|Bericht|Informe, Saisie=Data Entry|Dateneingabe|Introducción de Datos, Tableau=Table|Tabelle|Tabla, Utilisateur=User|Benutzer|Usuario, Vue=View|Ansicht|Vista, Export=Export|Export|Exportación, Données=Data|Daten|Datos\n'
+      +'Reponds UNIQUEMENT avec ce JSON: {"body": "..."}\n'
+      +'Body FR: '+chunk;
+  }
+  return callClaude(prompt);
+}
+
+function translateArticle(title, body, desc, lang) {
+  var MAX = 3000;
+  // Découper par h2, chaque section devient un chunk séparé
+  var rawSections = body.split(/(?=<h2[\s>])/i);
+  var chunks = [], cur = '';
+  rawSections.forEach(function(s) {
+    if (s.length > MAX) {
+      // Découper proprement entre balises </p> ou </div>
+      if (cur) { chunks.push(cur); cur = ''; }
+      var remaining = s;
+      while (remaining.length > MAX) {
+        // Chercher le dernier </p> ou </div> avant MAX
+        var cutPos = -1;
+        var searchIn = remaining.slice(0, MAX);
+        var lastP = searchIn.lastIndexOf('</p>');
+        var lastDiv = searchIn.lastIndexOf('</div>');
+        var lastTr = searchIn.lastIndexOf('</tr>');
+        cutPos = Math.max(lastP, lastDiv, lastTr);
+        if (cutPos === -1) cutPos = MAX; // fallback
+        else cutPos += cutPos === lastP ? 4 : (cutPos === lastTr ? 5 : 6);
+        chunks.push(remaining.slice(0, cutPos));
+        remaining = remaining.slice(cutPos);
+      }
+      if (remaining) chunks.push(remaining);
+    } else if ((cur + s).length > MAX && cur.length > 0) {
+      chunks.push(cur); cur = s;
+    } else {
+      cur += s;
+    }
+  });
+  if (cur) chunks.push(cur);
+
+  var outTitle = title, outDesc = desc, outChunks = [];
+
+  function next(i) {
+    if (i >= chunks.length) return Promise.resolve({title:outTitle, description:outDesc, body:outChunks.join('')});
+    return translateChunk(chunks[i], lang, i===0, title, desc).then(function(p) {
+      if (i===0 && p.title) outTitle = p.title;
+      if (i===0 && p.description) outDesc = p.description;
+      outChunks.push(p.body||'');
+      return next(i+1);
+    }).catch(function() { outChunks.push(chunks[i]); return next(i+1); });
+  }
+  return next(0);
+}
+
+function askConfirm(existLangs) {
+  return new Promise(function(res) {
+    pending = res;
+    document.getElementById('exist-tags').innerHTML = existLangs.map(function(l){
+      return '<span class="lang-tag">'+LN[l]+'</span>';
+    }).join('');
+    document.getElementById('confirm').style.display = 'block';
+  });
+}
+
+function confirmChoice(c) {
+  document.getElementById('confirm').style.display = 'none';
+  if (pending) { pending(c); pending = null; }
+}
+
+function processOne(articleId, ls) {
+  return post('/get-article', {article_id: articleId}).then(function(art) {
+    var fr = (art.translated_content||{}).fr || {};
+    var title = fr.title || art.title || '';
+    var body = fr.body || art.body || '';
+    var desc = fr.description || art.description || '';
+
+    var prev = document.getElementById('preview');
+    prev.innerHTML = '<strong>'+title+'</strong>'+body.replace(/<[^>]+>/g,' ').substring(0,120)+'...';
+    prev.style.display = 'block';
+    setStep('s-fetch', 'done');
+
+    var existing = art.translated_content || {};
+    var existLangs = ls.filter(function(l){ return existing[l] && existing[l].title && existing[l].body; });
+
+    var p = existLangs.length > 0 ? askConfirm(existLangs) : Promise.resolve('ow');
+
+    return p.then(function(choice) {
+      var skip = choice==='sk' ? existLangs : [];
+      var translations = {};
+
+      function nextLang(i) {
+        if (i >= ls.length) return Promise.resolve(translations);
+        var lang = ls[i];
+        if (skip.indexOf(lang) !== -1) { setStep('s-'+lang,'skip'); return nextLang(i+1); }
+        setStep('s-'+lang,'active');
+        setStatus('Traduction '+LN[lang]+'...','info');
+        return translateArticle(title, body, desc, lang).then(function(t) {
+          translations[lang] = t;
+          setStep('s-'+lang,'done');
+          return nextLang(i+1);
+        }).catch(function() { setStep('s-'+lang,'fail'); return nextLang(i+1); });
+      }
+
+      return nextLang(0).then(function(tr) {
+        var ok = ls.filter(function(l){ return tr[l]; });
+        if (!ok.length) return [];
+        setStep('s-push','active');
+        setStatus('Envoi dans Intercom...','info');
+        return post('/push-translations', {article_id:articleId, translations:tr, langs:ok}).then(function() {
+          setStep('s-push','done');
+          return ok;
+        });
+      });
+    });
+  });
+}
+
+function run() {
+  var ls = langs();
+  if (!ls.length) { setStatus('Selectionne au moins une langue.','err'); return; }
+  if (!K()) { setStatus('Saisis ta cle API Anthropic.','err'); return; }
+  if (K().indexOf('sk-ant') !== 0) { setStatus('Cle API invalide — elle doit commencer par sk-ant-.','err'); return; }
+
+  var ids;
+  if (mode === 'collection') {
+    ids = colIds.map(String);
+    if (!ids.length) { setStatus('Selectionne une collection.','err'); return; }
+  } else {
+    ids = getIds(document.getElementById('article-ids').value);
+    if (!ids.length) { setStatus('Saisis au moins un ID ou lien.','err'); return; }
+  }
+
+  var btn = document.getElementById('btn');
+  btn.disabled = true;
+  document.getElementById('preview').style.display = 'none';
+  document.getElementById('status').style.display = 'none';
+  document.getElementById('confirm').style.display = 'none';
+
+  var ok = 0, err = 0, i = 0;
+
+  function nextArt() {
+    if (i >= ids.length) {
+      btn.disabled = false;
+      if (ids.length > 1) setStatus('Termine : '+ok+' traduit(s)'+(err>0?', '+err+' erreur(s)':'.'+(ok===ids.length?'':'.')),'ok');
+      return;
+    }
+    var id = ids[i];
+    var sfx = ids.length > 1 ? ' ('+(i+1)+'/'+ids.length+')' : '';
+    buildSteps(ls, sfx);
+    setStep('s-fetch','active');
+    setStatus('Recuperation...','info');
+    processOne(id, ls).then(function(okLangs) {
+      if (okLangs && okLangs.length) {
+        ok++;
+        setStatus('Traductions creees : '+okLangs.map(function(l){return LN[l];}).join(', '),'ok');
+      }
+      i++; nextArt();
+    }).catch(function(e) {
+      err++;
+      setStatus('Erreur article '+id+' : '+e.message,'err');
+      i++; nextArt();
+    });
+  }
+  nextArt();
+}
+</script>
+</body>
+</html>
