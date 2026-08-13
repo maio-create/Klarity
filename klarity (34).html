@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Klarity — Traducteur Intercom</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 50'><rect x='0' y='0' width='60' height='11' rx='5.5' fill='%233762E3'/><rect x='10' y='16' width='50' height='11' rx='5.5' fill='%233762E3' opacity='0.55'/><rect x='30' y='32' width='26' height='9' rx='4.5' fill='%233762E3' opacity='0.26'/></svg>">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F0F4FF;--surface:#FFF;--surface2:#F5F7FF;
+  --border:#E2E8F8;--accent:#3762E3;--accent-l:#EEF3FF;--accent-h:#2952CC;
+  --text:#1A1F36;--muted:#6B7280;--dim:#A0A8C0;
+  --ok:#16A34A;--ok-bg:#F0FDF4;--ok-b:#BBF7D0;
+  --err:#DC2626;--err-bg:#FEF2F2;--err-b:#FECACA;
+  --warn:#B45309;--warn-bg:#FFFBEB;--warn-b:#FDE68A;
+  --info:#3762E3;--info-bg:#EEF3FF;--info-b:#BFDBFE;
+}
+html,body{height:100%;font-family:'Inter',sans-serif;color:var(--text);background:var(--bg)}
+.app{display:grid;grid-template-rows:60px 1fr 44px;height:100vh}
+.header{background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 1.5rem;gap:12px}
+.logo-wrap{display:flex;align-items:center;gap:10px}
+.logo-name{font-size:20px;font-weight:700;letter-spacing:-.5px;color:var(--text)}
+.logo-name span{color:var(--accent)}
+.tagline{font-size:12px;color:var(--muted);margin-left:auto}
+.main{display:grid;grid-template-columns:360px 1fr;overflow:hidden}
+.panel-left{background:var(--surface);border-right:1px solid var(--border);overflow-y:auto;padding:1.5rem}
+.panel-right{background:var(--bg);overflow-y:auto;padding:1.5rem;display:flex;flex-direction:column;gap:1rem}
+.footer{background:var(--surface);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--dim)}
+.section-title{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin-bottom:8px}
+.lang-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:1.25rem}
+.chip{position:relative;cursor:pointer}
+.chip input{position:absolute;opacity:0;width:0;height:0}
+.chip-inner{display:flex;flex-direction:column;align-items:center;gap:2px;padding:7px 2px;border:1px solid var(--border);border-radius:7px;background:var(--surface2);transition:all .15s}
+.chip-inner .flag{font-size:16px;line-height:1}
+.chip-inner .code{font-size:9px;font-weight:600;color:var(--muted)}
+.chip input:checked+.chip-inner{border-color:var(--accent);background:var(--accent-l)}
+.chip input:checked+.chip-inner .code{color:var(--accent)}
+.divider{border:none;border-top:1px solid var(--border);margin:1.25rem 0}
+.mode-tabs{display:flex;border:1px solid var(--border);border-radius:7px;overflow:hidden;margin-bottom:1rem}
+.mode-tab{flex:1;padding:7px;font-size:11px;font-weight:500;cursor:pointer;background:var(--surface2);color:var(--muted);border:none;font-family:Inter,sans-serif;transition:all .15s}
+.mode-tab.active{background:var(--accent);color:#fff}
+.field{margin-bottom:.875rem}
+.field input,.field textarea,.field select{width:100%;padding:8px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;font-size:13px;font-family:Inter,sans-serif;color:var(--text);outline:none;transition:border-color .15s}
+.field input:focus,.field textarea:focus,.field select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(55,98,227,.1)}
+.field textarea{resize:vertical;line-height:1.5}
+.field select{cursor:pointer}
+.art-list{background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:8px;margin-bottom:.875rem;max-height:120px;overflow-y:auto;display:none}
+.art-count{font-size:11px;color:var(--accent);margin-bottom:4px;font-weight:500}
+.art-item{font-size:11px;color:var(--muted);padding:2px 0;border-bottom:1px solid var(--border)}
+.art-item:last-child{border-bottom:none}
+.btn{width:100%;padding:10px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;font-family:Inter,sans-serif;cursor:pointer;transition:background .15s}
+.btn:hover{background:var(--accent-h)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.confirm{background:var(--warn-bg);border:1px solid var(--warn-b);border-radius:8px;padding:.875rem;margin-bottom:.875rem;display:none}
+.confirm p{font-size:12px;color:var(--warn);margin-bottom:6px;line-height:1.4}
+.lang-tags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px}
+.lang-tag{font-size:11px;font-weight:500;padding:2px 7px;background:#FEF3C7;border:1px solid #FCD34D;border-radius:4px;color:#92400E}
+.confirm-btns{display:flex;gap:6px}
+.confirm-btns button{flex:1;padding:6px;border-radius:7px;font-size:12px;font-weight:500;cursor:pointer;font-family:Inter,sans-serif}
+.btn-ow{background:var(--accent);color:#fff;border:none}
+.btn-sk{background:#fff;color:var(--muted);border:1px solid var(--border)}
+.worker-row{display:flex;align-items:center;gap:6px;margin-top:.875rem}
+.worker-row label{font-size:10px;color:var(--dim);white-space:nowrap}
+.worker-row input{flex:1;padding:4px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:5px;font-size:10px;font-family:monospace;color:var(--muted);outline:none}
+.output-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;color:var(--dim);text-align:center;gap:10px;min-height:300px}
+.output-empty-icon{font-size:36px;opacity:.3}
+.output-empty-title{font-size:14px;font-weight:500;color:var(--muted)}
+.output-empty-sub{font-size:12px}
+.status-bar{padding:10px 14px;border-radius:8px;font-size:13px;line-height:1.5;display:none}
+.s-info{background:var(--info-bg);color:var(--info);border:1px solid var(--info-b)}
+.s-ok{background:var(--ok-bg);color:var(--ok);border:1px solid var(--ok-b)}
+.s-err{background:var(--err-bg);color:var(--err);border:1px solid var(--err-b)}
+.preview-card{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:8px;padding:12px;font-size:13px;line-height:1.5;display:none}
+.preview-card strong{font-weight:500;display:block;margin-bottom:2px;color:var(--text)}
+.preview-card span{color:var(--muted)}
+.steps-list{display:flex;flex-direction:column;gap:6px}
+.prog-item{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;color:var(--muted)}
+.prog-dot{width:8px;height:8px;border-radius:50%;background:var(--dim);flex-shrink:0}
+.prog-item.active{color:var(--accent);border-color:var(--accent-l);background:var(--accent-l)}
+.prog-item.active .prog-dot{background:var(--accent);animation:pulse 1s infinite}
+.prog-item.done{color:var(--ok);border-color:var(--ok-b);background:var(--ok-bg)}
+.prog-item.done .prog-dot{background:var(--ok)}
+.prog-item.fail{color:var(--err);border-color:var(--err-b)}
+.prog-item.fail .prog-dot{background:var(--err)}
+.prog-item.skip{color:var(--dim)}
+.result-block{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px}
+.result-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.result-lang{font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.05em}
+.copy-btn{font-size:11px;padding:4px 10px;background:var(--accent-l);color:var(--accent);border:1px solid var(--accent);border-radius:5px;cursor:pointer;font-family:Inter,sans-serif;transition:all .15s}
+.copy-btn:hover{background:var(--accent);color:#fff}
+.copy-btn.copied{background:var(--ok-bg);color:var(--ok);border-color:var(--ok)}
+.result-text{font-size:13px;color:var(--text);line-height:1.6;white-space:pre-wrap;word-break:break-word}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="header">
+    <div class="logo-wrap">
+      <svg width="30" height="32" viewBox="0 0 60 50" fill="none" style="margin-top:3px">
+        <rect x="0" y="0" width="60" height="11" rx="5.5" fill="#3762E3"/>
+        <rect x="10" y="16" width="50" height="11" rx="5.5" fill="#3762E3" opacity="0.55"/>
+        <rect x="30" y="32" width="26" height="9" rx="4.5" fill="#3762E3" opacity="0.26"/>
+      </svg>
+      <span class="logo-name"><span>K</span>larity</span>
+    </div>
+    <span class="tagline">Traduction automatique &mdash; Kizeo Forms / Klear / Karr&eacute;</span>
+  </header>
+
+  <main class="main">
+
+    <!-- Panneau gauche : configuration -->
+    <div class="panel-left">
+
+      <div class="section-title">Langues cibles</div>
+      <div class="lang-grid">
+        <label class="chip"><input type="checkbox" value="en"><div class="chip-inner"><span class="flag">&#127468;&#127463;</span><span class="code">EN</span></div></label>
+        <label class="chip"><input type="checkbox" value="es"><div class="chip-inner"><span class="flag">&#127466;&#127480;</span><span class="code">ES</span></div></label>
+        <label class="chip"><input type="checkbox" value="de"><div class="chip-inner"><span class="flag">&#127465;&#127466;</span><span class="code">DE</span></div></label>
+        <label class="chip"><input type="checkbox" value="it"><div class="chip-inner"><span class="flag">&#127470;&#127481;</span><span class="code">IT</span></div></label>
+        <label class="chip"><input type="checkbox" value="nl"><div class="chip-inner"><span class="flag">&#127475;&#127473;</span><span class="code">NL</span></div></label>
+        <label class="chip"><input type="checkbox" value="pl"><div class="chip-inner"><span class="flag">&#127477;&#127473;</span><span class="code">PL</span></div></label>
+        <label class="chip"><input type="checkbox" value="pt"><div class="chip-inner"><span class="flag">&#127477;&#127481;</span><span class="code">PT</span></div></label>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="section-title">Mode</div>
+      <div class="mode-tabs">
+        <button class="mode-tab active" onclick="switchMode('articles')">Par articles</button>
+        <button class="mode-tab" onclick="switchMode('collection')">Par collection</button>
+        <button class="mode-tab" onclick="switchMode('texte')">Texte libre</button>
+      </div>
+
+      <div id="mode-articles">
+        <div class="field">
+          <textarea id="article-ids" rows="4" placeholder="Un ID ou lien par ligne&#10;ex: 15532716&#10;ou https://intercom.help/..."></textarea>
+        </div>
+      </div>
+
+      <div id="mode-collection" style="display:none">
+        <div class="field">
+          <select id="hc-select" onchange="onHCChange()">
+            <option value="">Base de connaissance...</option>
+          </select>
+        </div>
+        <div class="field">
+          <select id="col-select" onchange="onColChange()" style="display:none">
+            <option value="">Collection...</option>
+          </select>
+        </div>
+        <div class="art-list" id="art-list">
+          <div class="art-count" id="art-count"></div>
+          <div id="art-items"></div>
+        </div>
+      </div>
+
+      <div id="mode-texte" style="display:none">
+        <div class="field">
+          <textarea id="free-text" rows="8" placeholder="Collez votre texte ici (email, post LinkedIn, newsletter...)&#10;&#10;La mise en page sera preservee."></textarea>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="section-title">Cle API</div>
+      <div class="field">
+        <input type="password" id="api-key" placeholder="sk-ant-..." onchange="saveKey()">
+      </div>
+
+      <div class="confirm" id="confirm">
+        <p>Ces langues ont deja une traduction :</p>
+        <div class="lang-tags" id="exist-tags"></div>
+        <p>Ecraser ou ignorer ?</p>
+        <div class="confirm-btns">
+          <button class="btn-ow" onclick="confirmChoice('ow')">Ecraser</button>
+          <button class="btn-sk" onclick="confirmChoice('sk')">Ignorer</button>
+        </div>
+      </div>
+
+      <button class="btn" id="btn" onclick="run()">Traduire</button>
+
+      <div class="worker-row">
+        <label>Worker</label>
+        <input type="text" id="worker-url" value="https://intercom-translate.maio-803.workers.dev">
+      </div>
+    </div>
+
+    <!-- Panneau droit : résultats -->
+    <div class="panel-right" id="panel-right">
+      <div class="output-empty" id="output-empty">
+        <div class="output-empty-icon">&#127758;</div>
+        <div class="output-empty-title">Pret a traduire</div>
+        <div class="output-empty-sub">Selectionne des langues, un article ou du texte, puis lance.</div>
+      </div>
+      <div id="status-bar" class="status-bar"></div>
+      <div id="preview-card" class="preview-card"></div>
+      <div id="steps-list" class="steps-list"></div>
+      <div id="results-list"></div>
+    </div>
+
+  </main>
+
+  <footer class="footer">Les traductions Intercom sont creees en brouillon &mdash; pense a les relire avant de publier.</footer>
+</div>
+
+<script>
+var LN = {en:'Anglais',es:'Espagnol',de:'Allemand',it:'Italien',nl:'Neerlandais',pl:'Polonais',pt:'Portugais'};
+var LL = {en:'anglais',es:'espagnol',de:'allemand',it:'italien',nl:'neerlandais',pl:'polonais',pt:'portugais'};
+var mode = 'articles';
+var colIds = [];
+var pending = null;
+
+var GLOSSAIRE = 'Administrateur=Administrator|Administrator|Administrador, Balise=Tag|Kennzeichnung|Etiqueta, Balise Block=Block Tag|Block-Tag|Etiqueta de Bloque, Champ=Field|Feld|Campo, Chef de Groupe=Group Leader|Gruppenleiter|Jefe de Grupo, Formulaire=Form|Formular|Formulario, Groupe=Group|Gruppe|Grupo, Liste Avancee=Advanced List|Erweiterte Liste|Lista Avanzada, Liste Externe=External List|Externe Liste|Lista Externa, Rapport=Report|Bericht|Informe, Saisie=Data Entry|Dateneingabe|Introduccion de Datos, Tableau=Table|Tabelle|Tabla, Utilisateur=User|Benutzer|Usuario, Vue=View|Ansicht|Vista';
+
+var REGLES = [
+  'REGLES:',
+  '- Conserve le HTML exactement (balises, attributs, styles)',
+  '- Ne traduis pas : Klear, Kizeo, Kizeo Forms, Karre',
+  '- Respecte ce glossaire : ' + GLOSSAIRE,
+  '- Balises ##nom## simples : traduire le nom en minuscules sans accents (ex FR-DE: ##conforme##->##konform##, ##controle##->##kontrolle##, ##date##->##datum##, ##commentaire##->##kommentar##, ##client##->##kunde##)',
+  '- Balises ##_block:identifiant-SUFFIXE## : laisser le prefixe _block: intact, traduire uniquement l identifiant en minuscules sans accents, le suffixe apres le tiret peut avoir des majuscules (ex: ##_block:conforme-C## -> ##_block:konform-C## en DE)',
+  '- Le texte libre autour des balises doit aussi etre traduit'
+].join('\n');
+
+window.addEventListener('DOMContentLoaded', function() {
+  var k = localStorage.getItem('klarity_key');
+  if (k && k.indexOf('sk-ant') === 0) document.getElementById('api-key').value = k;
+});
+
+function saveKey() {
+  var k = document.getElementById('api-key').value.trim();
+  if (k.indexOf('sk-ant') === 0) localStorage.setItem('klarity_key', k);
+}
+
+function W() { return document.getElementById('worker-url').value.trim(); }
+function K() { return document.getElementById('api-key').value.trim(); }
+function langs() { return Array.from(document.querySelectorAll('.chip input:checked')).map(function(c){return c.value;}); }
+
+function setStatus(msg, type) {
+  document.getElementById('output-empty').style.display = 'none';
+  var el = document.getElementById('status-bar');
+  el.textContent = msg; el.className = 'status-bar s-'+type; el.style.display = 'block';
+}
+
+function hideEmpty() { document.getElementById('output-empty').style.display = 'none'; }
+
+function switchMode(m) {
+  mode = m;
+  document.querySelectorAll('.mode-tab').forEach(function(t,i){
+    t.classList.toggle('active',(i===0&&m==='articles')||(i===1&&m==='collection')||(i===2&&m==='texte'));
+  });
+  document.getElementById('mode-articles').style.display = m==='articles'?'block':'none';
+  document.getElementById('mode-collection').style.display = m==='collection'?'block':'none';
+  document.getElementById('mode-texte').style.display = m==='texte'?'block':'none';
+  if (m==='collection') loadHC();
+}
+
+function loadHC() {
+  var sel = document.getElementById('hc-select');
+  if (sel.options.length > 1) return;
+  post('/get-help-centers', {}).then(function(d) {
+    sel.innerHTML = '<option value="">Base de connaissance...</option>';
+    (d.data||[]).forEach(function(hc) {
+      var o = document.createElement('option');
+      o.value = hc.id; o.textContent = hc.display_name || hc.identifier;
+      sel.appendChild(o);
+    });
+  }).catch(function() { sel.innerHTML = '<option value="">Erreur</option>'; });
+}
+
+function onHCChange() {
+  var hcId = document.getElementById('hc-select').value;
+  var cSel = document.getElementById('col-select');
+  document.getElementById('art-list').style.display = 'none';
+  colIds = [];
+  if (!hcId) { cSel.style.display='none'; return; }
+  cSel.style.display = 'block';
+  cSel.innerHTML = '<option value="">Chargement...</option>';
+  post('/get-collections', {help_center_id: hcId}).then(function(d) {
+    cSel.innerHTML = '<option value="">Collection...</option>';
+    (d.data||[]).forEach(function(c) {
+      var o = document.createElement('option');
+      o.value = c.id; o.textContent = (c.parent_id?'  \u2514 ':'')+(c.name||c.id);
+      cSel.appendChild(o);
+    });
+  }).catch(function() { cSel.innerHTML = '<option value="">Erreur</option>'; });
+}
+
+function onColChange() {
+  var colId = document.getElementById('col-select').value;
+  var list = document.getElementById('art-list');
+  if (!colId) { list.style.display='none'; return; }
+  list.style.display = 'block';
+  document.getElementById('art-count').textContent = 'Chargement...';
+  document.getElementById('art-items').innerHTML = '';
+  colIds = [];
+  post('/get-collection-articles', {collection_id: colId}).then(function(d) {
+    colIds = d.article_ids || [];
+    document.getElementById('art-count').textContent = colIds.length + ' article(s)';
+    document.getElementById('art-items').innerHTML = (d.articles||[]).map(function(a){
+      return '<div class="art-item">'+a.title+'</div>';
+    }).join('');
+  }).catch(function() { document.getElementById('art-count').textContent = 'Erreur'; });
+}
+
+function getId(s) {
+  var m = s.trim().match(/articles\/([0-9]+)/);
+  if (m) return m[1];
+  return s.trim().replace(/[^0-9]/g,'');
+}
+
+function getIds(s) {
+  return s.split(/[,;\n]+/).map(function(x){return x.trim();}).filter(Boolean).map(getId).filter(function(x){return x.length>0;});
+}
+
+function clearOutput() {
+  document.getElementById('steps-list').innerHTML = '';
+  document.getElementById('results-list').innerHTML = '';
+  document.getElementById('status-bar').style.display = 'none';
+  document.getElementById('preview-card').style.display = 'none';
+}
+
+function addStep(id, label) {
+  var el = document.createElement('div');
+  el.className = 'prog-item'; el.id = id;
+  el.innerHTML = '<div class="prog-dot"></div><span>'+label+'</span>';
+  document.getElementById('steps-list').appendChild(el);
+}
+
+function setStep(id, st) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.className = 'prog-item '+(st==='fail'?'fail':st==='skip'?'skip':st);
+}
+
+function buildSteps(ls, sfx) {
+  document.getElementById('steps-list').innerHTML = '';
+  addStep('s-fetch', 'Recuperation'+(sfx||''));
+  ls.forEach(function(l){ addStep('s-'+l, 'Traduction '+LN[l]); });
+  addStep('s-push', 'Envoi dans Intercom');
+}
+
+function post(path, body) {
+  return fetch(W()+path, {
+    method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)
+  }).then(function(r){ return r.json().then(function(d){ if(!r.ok) throw new Error(JSON.stringify(d.error||d)); return d; }); });
+}
+
+function callClaude(prompt, rawMode) {
+  return fetch('https://api.anthropic.com/v1/messages', {
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'x-api-key': K(),
+      'anthropic-version':'2023-06-01',
+      'anthropic-dangerous-direct-browser-access':'true'
+    },
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:16000,messages:[{role:'user',content:prompt}]})
+  }).then(function(r){ return r.json(); }).then(function(d){
+    if (d.error) throw new Error(d.error.message);
+    var raw = (d.content||[]).filter(function(b){return b.type==='text';}).map(function(b){return b.text;}).join('');
+    if (rawMode) return raw;
+    var s = raw.indexOf('{'), e = raw.lastIndexOf('}');
+    if (s===-1||e===-1) throw new Error('JSON invalide');
+    return JSON.parse(raw.slice(s, e+1));
+  });
+}
+
+function buildArticlePrompt(chunk, lang, isFirst, title, desc) {
+  var ln = LL[lang]||lang;
+  var lines = ['Traduis du francais vers '+ln+'.', REGLES];
+  lines.push('Reponds UNIQUEMENT avec ce JSON: ' + (isFirst ? '{"title":"...","description":"...","body":"..."}' : '{"body":"..."}'));
+  if (isFirst) { lines.push('Titre FR: '+title); if (desc) lines.push('Description FR: '+desc); }
+  lines.push('Body FR: '+chunk);
+  return lines.join('\n');
+}
+
+function translateArticle(title, body, desc, lang) {
+  var MAX = lang === 'de' || lang === 'pl' ? 2000 : 3000;
+  var rawSections = body.split(/(?=<h2[\s>])/i);
+  var chunks = [], cur = '';
+  rawSections.forEach(function(s) {
+    if (s.length > MAX) {
+      if (cur) { chunks.push(cur); cur = ''; }
+      var rem = s;
+      while (rem.length > MAX) {
+        var si = rem.slice(0, MAX);
+        var cp = Math.max(si.lastIndexOf('</p>'), si.lastIndexOf('</li>'), si.lastIndexOf('</div>'), si.lastIndexOf('</tr>'));
+        if (cp === -1) cp = MAX; else cp += (cp === si.lastIndexOf('</p>') ? 4 : cp === si.lastIndexOf('</li>') ? 5 : 6);
+        chunks.push(rem.slice(0, cp)); rem = rem.slice(cp);
+      }
+      if (rem) chunks.push(rem);
+    } else if ((cur+s).length > MAX && cur.length > 0) {
+      chunks.push(cur); cur = s;
+    } else { cur += s; }
+  });
+  if (cur) chunks.push(cur);
+
+  var outTitle = title, outDesc = desc, outChunks = [];
+  function next(i) {
+    if (i >= chunks.length) return Promise.resolve({title:outTitle,description:outDesc,body:outChunks.join('')});
+    return callClaude(buildArticlePrompt(chunks[i], lang, i===0, title, desc), false).then(function(p) {
+      if (i===0 && p.title) outTitle = p.title;
+      if (i===0 && p.description) outDesc = p.description;
+      outChunks.push(p.body||'');
+      return next(i+1);
+    }).catch(function() { outChunks.push(chunks[i]); return next(i+1); });
+  }
+  return next(0);
+}
+
+function askConfirm(existLangs) {
+  return new Promise(function(res) {
+    pending = res;
+    document.getElementById('exist-tags').innerHTML = existLangs.map(function(l){
+      return '<span class="lang-tag">'+LN[l]+'</span>';
+    }).join('');
+    document.getElementById('confirm').style.display = 'block';
+  });
+}
+
+function confirmChoice(c) {
+  document.getElementById('confirm').style.display = 'none';
+  if (pending) { pending(c); pending = null; }
+}
+
+function copyText(id, btn) {
+  var el = document.getElementById(id);
+  navigator.clipboard.writeText(el.innerText||el.textContent).then(function() {
+    btn.textContent = 'Copie !'; btn.classList.add('copied');
+    setTimeout(function(){ btn.textContent = 'Copier'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+function showFreeResults(ls, results, isHTML) {
+  var html = '';
+  ls.forEach(function(l) {
+    var id = 'res-'+l;
+    var txt = results[l] || '';
+    html += '<div class="result-block">'
+      + '<div class="result-header">'
+      + '<span class="result-lang">'+LN[l]+'</span>'
+      + '<button class="copy-btn" onclick="copyText(\''+id+'\', this)">Copier</button>'
+      + '</div>'
+      + '<div class="result-text" id="'+id+'">' + (isHTML ? txt : txt.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')) + '</div>'
+      + '</div>';
+  });
+  document.getElementById('results-list').innerHTML = html;
+}
+
+function runFreeText(ls) {
+  var text = document.getElementById('free-text').value.trim();
+  if (!text) { setStatus('Colle du texte a traduire.','err'); return; }
+  var btn = document.getElementById('btn');
+  btn.disabled = true;
+  hideEmpty();
+  clearOutput();
+  var isHTML = /<[a-z][\s\S]*>/i.test(text);
+  setStatus('Traduction en cours...','info');
+  var results = {}, done = 0;
+  ls.forEach(function(lang) {
+    var ln = LL[lang]||lang;
+    var prompt = [
+      'Traduis ce texte du francais vers '+ln+'.',
+      isHTML ? 'Le contenu est du HTML : conserve EXACTEMENT toute la structure HTML.' : 'Conserve EXACTEMENT la mise en page (sauts de ligne, espaces, listes, emojis, ponctuation).',
+      'Ne traduis pas : Klear, Kizeo, Kizeo Forms, Karre.',
+      'Respecte ce glossaire : '+GLOSSAIRE,
+      'Reponds UNIQUEMENT avec le texte traduit, sans commentaire ni explication.',
+      '',
+      text
+    ].join('\n');
+    callClaude(prompt, true).then(function(r){ results[lang] = r; }).catch(function(){ results[lang] = 'Erreur.'; }).then(function() {
+      done++;
+      if (done === ls.length) {
+        showFreeResults(ls, results, isHTML);
+        setStatus('Traductions generees !','ok');
+        btn.disabled = false;
+      }
+    });
+  });
+}
+
+function processOne(articleId, ls) {
+  return post('/get-article', {article_id: articleId}).then(function(art) {
+    var fr = (art.translated_content||{}).fr || {};
+    var title = fr.title || art.title || '';
+    var body = fr.body || art.body || '';
+    var desc = fr.description || art.description || '';
+    var pc = document.getElementById('preview-card');
+    pc.innerHTML = '<strong>'+title+'</strong><span>'+body.replace(/<[^>]+>/g,' ').substring(0,100)+'...</span>';
+    pc.style.display = 'block';
+    setStep('s-fetch', 'done');
+    var existing = art.translated_content || {};
+    var existLangs = ls.filter(function(l){ return existing[l] && existing[l].title && existing[l].body; });
+    var p = existLangs.length > 0 ? askConfirm(existLangs) : Promise.resolve('ow');
+    return p.then(function(choice) {
+      var skip = choice==='sk' ? existLangs : [];
+      var translations = {};
+      function nextLang(i) {
+        if (i >= ls.length) return Promise.resolve(translations);
+        var lang = ls[i];
+        if (skip.indexOf(lang) !== -1) { setStep('s-'+lang,'skip'); return nextLang(i+1); }
+        setStep('s-'+lang,'active');
+        setStatus('Traduction '+LN[lang]+'...','info');
+        return translateArticle(title, body, desc, lang).then(function(t) {
+          translations[lang] = t; setStep('s-'+lang,'done'); return nextLang(i+1);
+        }).catch(function() { setStep('s-'+lang,'fail'); return nextLang(i+1); });
+      }
+      return nextLang(0).then(function(tr) {
+        var ok = ls.filter(function(l){ return tr[l]; });
+        if (!ok.length) return [];
+        setStep('s-push','active');
+        setStatus('Envoi dans Intercom...','info');
+        return post('/push-translations', {article_id:articleId, translations:tr, langs:ok}).then(function() {
+          setStep('s-push','done'); return ok;
+        });
+      });
+    });
+  });
+}
+
+function run() {
+  var ls = langs();
+  if (!ls.length) { setStatus('Selectionne au moins une langue.','err'); return; }
+  if (!K()) { setStatus('Saisis ta cle API Anthropic.','err'); return; }
+  if (K().indexOf('sk-ant') !== 0) { setStatus('Cle API invalide.','err'); return; }
+  if (mode === 'texte') { runFreeText(ls); return; }
+  var ids;
+  if (mode === 'collection') {
+    ids = colIds.map(String);
+    if (!ids.length) { setStatus('Selectionne une collection.','err'); return; }
+  } else {
+    ids = getIds(document.getElementById('article-ids').value);
+    if (!ids.length) { setStatus('Saisis au moins un ID ou lien.','err'); return; }
+  }
+  var btn = document.getElementById('btn');
+  btn.disabled = true;
+  hideEmpty();
+  clearOutput();
+  document.getElementById('confirm').style.display = 'none';
+  var ok = 0, err = 0, i = 0;
+  function nextArt() {
+    if (i >= ids.length) {
+      btn.disabled = false;
+      if (ids.length > 1) setStatus('Termine : '+ok+' traduit(s)'+(err>0?', '+err+' erreur(s)':'')+'.','ok');
+      return;
+    }
+    var id = ids[i];
+    var sfx = ids.length > 1 ? ' ('+(i+1)+'/'+ids.length+')' : '';
+    buildSteps(ls, sfx);
+    setStep('s-fetch','active');
+    setStatus('Recuperation de l\'article...','info');
+    processOne(id, ls).then(function(okLangs) {
+      if (okLangs && okLangs.length) {
+        ok++;
+        setStatus('Traductions creees : '+okLangs.map(function(l){return LN[l];}).join(', '),'ok');
+      }
+      i++; nextArt();
+    }).catch(function(e) {
+      err++; setStatus('Erreur : '+e.message,'err'); i++; nextArt();
+    });
+  }
+  nextArt();
+}
+</script>
+</body>
+</html>
